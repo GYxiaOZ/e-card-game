@@ -850,8 +850,28 @@ io.on('connection', socket => {
 });
 
 // 启动服务器
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`E-Card 筹码制服务器运行在端口 ${PORT}`);
-  console.log(`访问 http://localhost:${PORT} 开始游戏`);
-});
+const DEFAULT_PORT = 3000;
+
+/**
+ * 尝试启动服务器，如果端口被占用则自动尝试下一个端口
+ * @param {number} port - 要尝试的端口号
+ */
+function startServer(port) {
+  server.listen(port, () => {
+    console.log(`E-Card 筹码制服务器运行在端口 ${port}`);
+    console.log(`访问 http://localhost:${port} 开始游戏`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`端口 ${port} 已被占用，尝试端口 ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('服务器启动失败:', err);
+      process.exit(1);
+    }
+  });
+}
+
+// 启动服务器
+startServer(process.env.PORT || DEFAULT_PORT);
